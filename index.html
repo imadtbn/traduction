@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام ترجمة النصوص</title>
+    <title>نظام ترجمة النصوص المتقدم</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -14,6 +15,7 @@
             --success-color: #2ecc71;
             --border-radius: 8px;
             --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
         }
         
         * {
@@ -24,7 +26,7 @@
         }
         
         body {
-            background-color: #f9f9f9;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             color: var(--dark-color);
             line-height: 1.6;
             padding: 20px;
@@ -45,16 +47,31 @@
             color: white;
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%);
+            transform: rotate(30deg);
         }
         
         h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
+            position: relative;
         }
         
         .description {
             font-size: 1.1rem;
             opacity: 0.9;
+            position: relative;
         }
         
         .translator-box {
@@ -68,9 +85,15 @@
             flex: 1;
             min-width: 300px;
             background: white;
-            padding: 20px;
+            padding: 25px;
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
+            transition: var(--transition);
+        }
+        
+        .input-section:focus-within, .output-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
         }
         
         .section-title {
@@ -79,6 +102,13 @@
             color: var(--primary-color);
             border-bottom: 2px solid var(--secondary-color);
             padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: var(--secondary-color);
         }
         
         textarea {
@@ -89,7 +119,8 @@
             border-radius: var(--border-radius);
             font-size: 1.1rem;
             resize: vertical;
-            transition: border-color 0.3s;
+            transition: var(--transition);
+            line-height: 1.8;
         }
         
         textarea:focus {
@@ -107,43 +138,61 @@
         }
         
         .lang-btn {
-            padding: 10px 20px;
-            background-color: white;
+            padding: 12px 20px;
+            background: linear-gradient(to bottom, #fff, #f9f9f9);
             border: 2px solid #ddd;
             border-radius: 30px;
             cursor: pointer;
             font-weight: bold;
-            transition: all 0.3s;
-            min-width: 120px;
+            transition: var(--transition);
+            min-width: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         
         .lang-btn:hover {
-            background-color: #f5f5f5;
+            background: linear-gradient(to bottom, #f9f9f9, #eee);
+            transform: translateY(-2px);
         }
         
         .lang-btn.active {
-            background-color: var(--secondary-color);
+            background: linear-gradient(to bottom, var(--secondary-color), #2980b9);
             color: white;
             border-color: var(--secondary-color);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
         }
         
         .translate-btn {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 100%;
-            padding: 15px;
-            background-color: var(--accent-color);
+            padding: 16px;
+            background: linear-gradient(to right, var(--accent-color), #c0392b);
             color: white;
             border: none;
             border-radius: var(--border-radius);
             font-size: 1.2rem;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: var(--transition);
             margin: 20px 0;
             font-weight: bold;
+            gap: 10px;
         }
         
         .translate-btn:hover {
-            background-color: #c0392b;
+            background: linear-gradient(to right, #c0392b, var(--accent-color));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(231, 76, 60, 0.3);
+        }
+        
+        .translate-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
         
         .output-text {
@@ -154,6 +203,7 @@
             border: 1px solid #ddd;
             font-size: 1.1rem;
             line-height: 1.8;
+            transition: var(--transition);
         }
         
         .translation-info {
@@ -161,6 +211,58 @@
             margin-top: 10px;
             color: #7f8c8d;
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .char-count {
+            text-align: left;
+            margin-top: 10px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .loader .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--secondary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: var(--success-color);
+            color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transform: translateX(100%);
+            opacity: 0;
+            transition: var(--transition);
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+            opacity: 1;
         }
         
         footer {
@@ -179,6 +281,11 @@
             h1 {
                 font-size: 2rem;
             }
+            
+            .lang-btn {
+                min-width: 120px;
+                padding: 10px 15px;
+            }
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -186,34 +293,52 @@
 <body>
     <div class="container">
         <header>
-            <h1>نظام ترجمة النصوص</h1>
+            <h1><i class="fas fa-language"></i> نظام ترجمة النصوص المتقدم</h1>
             <p class="description">ترجمة احترافية من العربية إلى الإنجليزية، الإسبانية، الإيطالية والفرنسية</p>
         </header>
         
         <div class="translator-box">
             <div class="input-section">
-                <h2 class="section-title">النص العربي</h2>
+                <h2 class="section-title"><i class="fas fa-pencil-alt"></i> النص العربي</h2>
                 <textarea id="inputText" placeholder="اكتب النص العربي هنا للترجمة..."></textarea>
+                <div class="char-count">عدد الأحرف: <span id="charCount">0</span></div>
             </div>
             
             <div class="output-section">
-                <h2 class="section-title">النص المترجم</h2>
+                <h2 class="section-title"><i class="fas fa-globe"></i> النص المترجم</h2>
                 <div id="outputText" class="output-text">ستظهر الترجمة هنا...</div>
-                <div class="translation-info">الترجمة إلى: <span id="targetLanguage">الإنجليزية</span></div>
+                <div class="translation-info"><i class="fas fa-info-circle"></i> الترجمة إلى: <span id="targetLanguage">الإنجليزية</span></div>
             </div>
         </div>
         
         <div class="language-selector">
-            <button class="lang-btn active" data-lang="en">English</button>
-            <button class="lang-btn" data-lang="es">Español</button>
-            <button class="lang-btn" data-lang="it">Italiano</button>
-            <button class="lang-btn" data-lang="fr">Français</button>
+            <button class="lang-btn active" data-lang="en">
+                <i class="fas fa-flag-usa"></i> English
+            </button>
+            <button class="lang-btn" data-lang="es">
+                <i class="fas fa-flag-spain"></i> Español
+            </button>
+            <button class="lang-btn" data-lang="it">
+                <i class="fas fa-flag-italy"></i> Italiano
+            </button>
+            <button class="lang-btn" data-lang="fr">
+                <i class="fas fa-flag-france"></i> Français
+            </button>
         </div>
         
-        <button id="translateBtn" class="translate-btn">ترجمة النص</button>
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>جاري الترجمة...</p>
+        </div>
+        
+        <button id="translateBtn" class="translate-btn">
+            <i class="fas fa-exchange-alt"></i> ترجمة النص
+        </button>
+        
+        <div class="notification" id="notification">تمت الترجمة بنجاح!</div>
         
         <footer>
-            <p>© 2023 نظام ترجمة النصوص - تم التصميم بعناية لتجربة ترجمة مريحة وسلسة</p>
+            <p>© 2023 نظام ترجمة النصوص المتقدم - تم التصميم بعناية لتجربة ترجمة مريحة وسلسة</p>
         </footer>
     </div>
 
@@ -224,8 +349,16 @@
             const translateBtn = document.getElementById('translateBtn');
             const langButtons = document.querySelectorAll('.lang-btn');
             const targetLanguage = document.getElementById('targetLanguage');
+            const charCount = document.getElementById('charCount');
+            const loader = document.getElementById('loader');
+            const notification = document.getElementById('notification');
             
             let currentLang = 'en';
+            
+            // تحديث عدد الأحرف
+            inputText.addEventListener('input', function() {
+                charCount.textContent = this.value.length;
+            });
             
             // تغيير اللغة المختارة
             langButtons.forEach(button => {
@@ -245,33 +378,66 @@
                 });
             });
             
-            // محاكاة عملية الترجمة
-            translateBtn.addEventListener('click', function() {
+            // دالة لعرض الإشعارات
+            function showNotification(message, isSuccess = true) {
+                notification.textContent = message;
+                notification.style.background = isSuccess ? 'var(--success-color)' : 'var(--accent-color)';
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+            
+            // دالة للترجمة باستخدام API
+            async function translateText(text, targetLang) {
+                const apiUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ar|${targetLang}`;
+                
+                try {
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+                    
+                    if (data.responseStatus === 200) {
+                        return data.responseData.translatedText;
+                    } else {
+                        throw new Error(data.responseDetails || 'فشل في الترجمة');
+                    }
+                } catch (error) {
+                    console.error('Error translating text:', error);
+                    throw new Error('حدث خطأ أثناء الترجمة. يرجى المحاولة مرة أخرى.');
+                }
+            }
+            
+            // عملية الترجمة
+            translateBtn.addEventListener('click', async function() {
                 const text = inputText.value.trim();
                 
                 if (!text) {
-                    outputText.textContent = 'يرجى إدخال نص للترجمة';
+                    showNotification('يرجى إدخال نص للترجمة', false);
+                    return;
+                }
+                
+                if (text.length > 500) {
+                    showNotification('النص طويل جداً. الحد الأقصى هو 500 حرف', false);
                     return;
                 }
                 
                 // تأثير التحميل
-                outputText.textContent = 'جاري الترجمة...';
+                loader.style.display = 'block';
                 translateBtn.disabled = true;
+                outputText.textContent = 'جاري الترجمة...';
                 
-                // محاكاة وقت الانتظار للترجمة
-                setTimeout(() => {
-                    // في الواقع، هنا سيتم الاتصال بخدمة ترجمة
-                    // لكننا سنقوم بمحاكاة النتيجة فقط
-                    const translations = {
-                        'en': `Translated to English: ${text}`,
-                        'es': `Traducido al español: ${text}`,
-                        'it': `Tradotto in italiano: ${text}`,
-                        'fr': `Traduit en français: ${text}`
-                    };
-                    
-                    outputText.textContent = translations[currentLang];
+                try {
+                    const translatedText = await translateText(text, currentLang);
+                    outputText.textContent = translatedText;
+                    showNotification('تمت الترجمة بنجاح!');
+                } catch (error) {
+                    outputText.textContent = 'حدث خطأ: ' + error.message;
+                    showNotification(error.message, false);
+                } finally {
+                    loader.style.display = 'none';
                     translateBtn.disabled = false;
-                }, 1500);
+                }
             });
         });
     </script>
